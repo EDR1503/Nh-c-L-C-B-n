@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài tập 3: Ghi nhớ số thứ tự</title>
+    <style>
+        /* --- Giao diện tổng thể --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            background-color: #D5E5F2; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        .sidebar { 
+            width: 80px; background-color: #1A2B5F; display: flex; 
+            flex-direction: column; justify-content: flex-end; 
+            align-items: center; padding-bottom: 20px; z-index: 10;
+        }
+
+        .content { 
+            flex-grow: 1; padding: 40px; overflow-y: auto; 
+            display: flex; flex-direction: column; 
+        }
+
+        .back-btn { 
+            text-decoration: none; color: #D00; font-family: sans-serif; 
+            font-weight: bold; margin-bottom: 20px; display: inline-block; 
+        }
+        h2 { color: #1A2B5F; font-size: 32px; margin-bottom: 10px; }
+        p { font-size: 18px; color: #333; line-height: 1.5; margin-bottom: 20px; }
+
+        /* --- Khu vực Bảng bài tập --- */
+        .board-area {
+            background: white; border-radius: 20px; padding: 30px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* Bố cục nhóm câu hỏi: căn giữa các cột nốt nhạc */
+        .question-group { 
+            display: flex; justify-content: center; gap: 8px; 
+        }
+
+        /* Mỗi nốt và ô nhập liệu là một cột dọc */
+        .note-column { 
+            display: flex; flex-direction: column; gap: 4px; 
+        }
+
+        .cell {
+            width: 70px; height: 50px; border: 1px solid #999; 
+            display: flex; justify-content: center; align-items: center; 
+            font-weight: bold; font-size: 18px; background: #fff;
+            color: black; text-transform: uppercase; border-radius: 4px;
+        }
+
+        /* Ô nốt nhạc cố định ở trên */
+        .cell.static { 
+            background: #e0e0e0; color: #1A2B5F; border-color: #888; 
+            border-bottom: 2px solid #555;
+        }
+
+        /* Ô điền số ở dưới */
+        .cell.empty-box {
+            border: 2px dashed #1A2B5F; background: #F0F5FA; 
+            cursor: pointer; transition: 0.2s; color: #1A2B5F; font-size: 24px;
+        }
+
+        .cell.empty-box:hover { background: #D5E5F2; }
+
+        .cell.empty-box.active {
+            border: 3px solid #D00; background: #fff5f5; 
+            box-shadow: 0 0 8px rgba(221, 0, 0, 0.3); transform: scale(1.05);
+        }
+
+        /* Trạng thái chấm điểm cho ô số */
+        .cell.correct { background-color: #d4edda; border-color: #28a745; color: #155724; border-style: solid; }
+        .cell.incorrect { background-color: #f8d7da; border-color: #dc3545; color: #721c24; border-style: solid; animation: shake 0.4s; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* --- Bảng Nhập liệu Số (Palette) --- */
+        .controls-area {
+            background: white; padding: 20px; border-radius: 15px; 
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+
+        .palette { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+
+        .num-btn {
+            width: 55px; height: 55px; border-radius: 10px; background-color: #F0F5FA; 
+            border: 2px solid #1A2B5F; color: #1A2B5F; font-weight: bold; 
+            font-size: 24px; font-family: sans-serif; cursor: pointer; transition: 0.2s;
+        }
+
+        .num-btn:hover { background-color: #1A2B5F; color: white; transform: translateY(-3px); }
+        .num-btn:active { transform: translateY(1px); }
+
+        .btn-group { margin-top: 10px; }
+        .action-btn {
+            padding: 12px 25px; font-size: 16px; margin: 0 10px;
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+            font-weight: bold;
+        }
+        #checkBtn { background: #D00; color: white; }
+        #checkBtn:hover { background: #a00; }
+        #resetBtn { background: #ddd; color: #333; }
+        #resetBtn:hover { background: #bbb; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div style="color: white; font-weight: bold;">Khóa Sol</div>
+    </aside>
+
+    <main class="content">
+        <div>
+            <a href="exercises.html" class="back-btn">← Quay lại</a>
+            <h2>Bài tập số 3</h2>
+            <p>Ghi nhớ số thứ tự của bảy tên nốt nhạc, sau đó đánh số dưới mỗi tên nốt theo thứ tự từ 1 đến 7. <br>
+               <b>Hướng dẫn:</b> Chọn ô trống bên dưới nốt nhạc và bấm các phím số ở bảng điều khiển (hoặc gõ phím số trên bàn phím) để điền đáp án.</p>
+        </div>
+
+        <div class="board-area" id="gridContainer">
+            <!-- Dữ liệu các hàng sẽ được Javascript tạo tự động ở đây -->
+        </div>
+
+        <div class="controls-area">
+            <h3 style="margin-bottom: 15px; color: #1A2B5F;">Bàn phím số</h3>
+            <div class="palette">
+                <button class="num-btn">1</button>
+                <button class="num-btn">2</button>
+                <button class="num-btn">3</button>
+                <button class="num-btn">4</button>
+                <button class="num-btn">5</button>
+                <button class="num-btn">6</button>
+                <button class="num-btn">7</button>
+            </div>
+            
+            <div class="btn-group">
+                <button id="resetBtn" class="action-btn">Tạo đề mới & Làm lại</button>
+                <button id="checkBtn" class="action-btn">Kiểm tra kết quả</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Định nghĩa Map ánh xạ Nốt và Số bậc
+            const NOTE_MAP = {
+                'ĐÔ': '1', 'RÊ': '2', 'MI': '3', 'FA': '4', 'SON': '5', 'LA': '6', 'SI': '7'
+            };
+            const NOTES = Object.keys(NOTE_MAP); // ['ĐÔ', 'RÊ', 'MI', 'FA', 'SON', 'LA', 'SI']
+            
+            let currentQuestions = [];
+
+            const gridContainer = document.getElementById('gridContainer');
+            const numBtns = document.querySelectorAll('.num-btn');
+            const checkBtn = document.getElementById('checkBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            let activeBox = null;
+
+            // 1. Thuật toán tạo Đề bài: Xáo trộn vị trí của đúng 7 nốt nhạc cho mỗi hàng
+            function generateRandomQuestions(numRows = 6) {
+                currentQuestions = [];
+                for (let r = 0; r < numRows; r++) {
+                    // Tạo một bản sao của mảng 7 nốt gốc
+                    let rowNotes = [...NOTES];
+                    
+                    // Thuật toán Fisher-Yates xáo trộn mảng để không trùng lặp vị trí
+                    for (let i = rowNotes.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [rowNotes[i], rowNotes[j]] = [rowNotes[j], rowNotes[i]];
+                    }
+                    currentQuestions.push(rowNotes);
+                }
+            }
+
+            // 2. Dựng bảng HTML: Bố cục cột dọc (Nốt trên - Ô số dưới)
+            function renderGrid() {
+                gridContainer.innerHTML = '';
+                currentQuestions.forEach((rowNotes) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'question-group';
+
+                    rowNotes.forEach((note) => {
+                        const colDiv = document.createElement('div');
+                        colDiv.className = 'note-column';
+
+                        // Ô hiển thị nốt (Static)
+                        const noteCell = document.createElement('div');
+                        noteCell.className = 'cell static';
+                        noteCell.innerText = note;
+
+                        // Ô điền số (Empty Box)
+                        const inputCell = document.createElement('div');
+                        inputCell.className = 'cell empty-box';
+                        // Lưu đáp án chuẩn vào data-attribute để dễ chấm điểm
+                        inputCell.dataset.expected = NOTE_MAP[note]; 
+                        
+                        inputCell.addEventListener('click', () => selectBox(inputCell));
+
+                        colDiv.appendChild(noteCell);
+                        colDiv.appendChild(inputCell);
+                        rowDiv.appendChild(colDiv);
+                    });
+
+                    gridContainer.appendChild(rowDiv);
+                });
+
+                // Tự động focus ô trống đầu tiên
+                const firstEmpty = document.querySelector('.empty-box');
+                if (firstEmpty) selectBox(firstEmpty);
+            }
+
+            // 3. Logic Đánh dấu ô đang được chọn
+            function selectBox(cellElement) {
+                if (activeBox) activeBox.classList.remove('active');
+                activeBox = cellElement;
+                activeBox.classList.add('active');
+                activeBox.classList.remove('correct', 'incorrect');
+            }
+
+            // 4. Logic Điền số và Nhảy cóc (qua nút bấm ảo)
+            numBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!activeBox) return; 
+                    
+                    activeBox.innerText = btn.innerText;
+                    activeBox.classList.remove('correct', 'incorrect');
+
+                    const emptyBoxes = Array.from(document.querySelectorAll('.empty-box'));
+                    const currentIndex = emptyBoxes.indexOf(activeBox);
+                    
+                    if (currentIndex >= 0 && currentIndex < emptyBoxes.length - 1) {
+                        selectBox(emptyBoxes[currentIndex + 1]);
+                    } else {
+                        activeBox.classList.remove('active');
+                        activeBox = null;
+                    }
+                });
+            });
+
+            // 5. Logic gõ phím vật lý
+            document.addEventListener('keydown', (e) => {
+                if (!activeBox) return;
+                // Kiểm tra nếu phím bấm là số từ 1 đến 7
+                if (['1', '2', '3', '4', '5', '6', '7'].includes(e.key)) {
+                    activeBox.innerText = e.key;
+                    activeBox.classList.remove('correct', 'incorrect');
+
+                    const emptyBoxes = Array.from(document.querySelectorAll('.empty-box'));
+                    const currentIndex = emptyBoxes.indexOf(activeBox);
+                    if (currentIndex >= 0 && currentIndex < emptyBoxes.length - 1) {
+                        selectBox(emptyBoxes[currentIndex + 1]);
+                    } else {
+                        activeBox.classList.remove('active');
+                        activeBox = null;
+                    }
+                }
+            });
+
+            // 6. Logic Chấm điểm
+            checkBtn.addEventListener('click', () => {
+                let isAllCorrect = true;
+                const emptyBoxes = document.querySelectorAll('.empty-box');
+                
+                emptyBoxes.forEach(box => {
+                    const expectedNum = box.dataset.expected;
+                    const userNum = box.innerText;
+
+                    box.classList.remove('correct', 'incorrect');
+
+                    if (userNum === expectedNum) {
+                        box.classList.add('correct');
+                    } else if (userNum !== '') { 
+                        box.classList.add('incorrect');
+                        isAllCorrect = false;
+                    } else {
+                        isAllCorrect = false; // Bỏ trống
+                    }
+                });
+
+                if (isAllCorrect) {
+                    setTimeout(() => alert("Hoàn hảo! Bạn đã nhớ cực kỳ chuẩn xác các bậc của âm giai."), 300);
+                }
+            });
+
+            // 7. Xóa và Random lại đề mới
+            resetBtn.addEventListener('click', () => {
+                generateRandomQuestions();
+                renderGrid(); 
+            });
+
+            // Khởi chạy lần đầu
+            generateRandomQuestions();
+            renderGrid();
+        });
+    </script>
+</body>
+</html>

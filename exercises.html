@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Bài tập - Nhạc Lý Cơ Bản</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* CSS viết thêm trực tiếp hoặc bạn có thể chuyển vào style.css */
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .exercise-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(26, 43, 95, 0.1);
+            text-align: center;
+            text-decoration: none;
+            color: #1A2B5F;
+            transition: transform 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            border-color: #1A2B5F;
+        }
+        .exercise-card h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #D00;
+            text-decoration: none;
+            font-weight: bold;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Dải bên trái cố định -->
+        <aside class="sidebar">
+            <div class="sidebar-spacer"></div>
+            <img src="assets/images/treble_clef_white.svg" alt="Khóa Sol" class="sidebar-clef">
+        </aside>
+
+        <!-- Khu vực nội dung -->
+        <main class="content" style="display: block; padding: 50px;">
+            <a href="index.html" class="back-btn">← Quay lại Trang chủ</a>
+            <h1 class="main-title" style="font-size: 50px; text-align: left;">Danh sách Bài tập</h1>
+            
+            <div class="exercise-grid">
+                <a href="exercise-1.html" class="exercise-card">
+                    <h3>Bài tập 1</h3>
+                    <p>Tìm đường đi qua các ngã ba, ngã tư nốt nhạc</p>
+                </a>
+                <a href="exercise-2.html" class="exercise-card">
+                    <h3>Bài tập 2</h3>
+                    <p>Điền tên nốt nhạc theo thứ tự vào ô trống</p>
+                </a>
+                <a href="exercise-3.html" class="exercise-card">
+                    <h3>Bài tập 3</h3>
+                    <p>Ghi nhớ số thứ tự của bảy tên nốt nhạc</p>
+                </a>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
