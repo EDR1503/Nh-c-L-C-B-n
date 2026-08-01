@@ -118,7 +118,7 @@
         <div>
             <a href="exercises.html" class="back-btn">← Quay lại</a>
             <h2>Bài tập số 1</h2>
-            <p>Đường đi từ điểm A đến điểm B qua các ngã ba, ngã tư được đánh dấu theo thứ tự tên nốt nhạc <b>(ĐÔ → RÊ → MI → FA → SON → LA → SI)</b>. <br>Lưu ý: Chỉ được đi qua các đường có nối nét kẻ. Hãy tìm đúng đường đi!</p>
+            <p id="instructionText">Đường đi từ điểm A đến điểm B qua các ngã ba, ngã tư được đánh dấu theo thứ tự tên nốt nhạc. <br>Lưu ý: Chỉ được đi qua các đường có nối nét kẻ. Hãy tìm đúng đường đi!</p>
         </div>
 
         <div class="graph-area">
@@ -144,6 +144,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const SCALE = ['ĐÔ', 'RÊ', 'MI', 'FA', 'SON', 'LA', 'SI'];
+            let currentScale = []; // Chuỗi âm giai ngẫu nhiên hiện tại
             let currentPathNodes = []; 
             let nodesData = []; 
             let edgesData = []; 
@@ -152,10 +153,10 @@
             const canvas = document.getElementById('linesCanvas');
             const ctx = canvas.getContext('2d');
             const currentPathStr = document.getElementById('currentPathStr');
+            const instructionText = document.getElementById('instructionText');
             const resetBtn = document.getElementById('resetBtn');
             const undoBtn = document.getElementById('undoBtn');
 
-            // Quay trở lại lưới tọa độ 26 điểm xếp đan xen, nhồi nhét để tạo hình tổ nhện
             const layoutGrid = [
                 { id: 1, x: 5, y: 50 },
                 { id: 2, x: 15, y: 20 }, { id: 3, x: 15, y: 50 }, { id: 4, x: 15, y: 80 },
@@ -169,13 +170,22 @@
             ];
 
             function generateRandomGraph() {
+                // Xoay vòng mảng SCALE ngẫu nhiên để tạo chuỗi âm chủ mới
+                const startIdx = Math.floor(Math.random() * SCALE.length);
+                currentScale = [];
+                for (let i = 0; i < 7; i++) {
+                    currentScale.push(SCALE[(startIdx + i) % 7]);
+                }
+
+                // Cập nhật đoạn chữ hướng dẫn để hiển thị luật chơi hiện tại
+                instructionText.innerHTML = `Đường đi từ điểm A đến điểm B qua các ngã ba, ngã tư được đánh dấu theo thứ tự âm giai bắt đầu từ nốt ${currentScale[0]} <b>(${currentScale.join(' → ')} → ${currentScale[0]})</b>. <br>Lưu ý: Chỉ được đi qua các đường có nối nét kẻ. Hãy tìm đúng đường đi!`;
+
                 // 1. Phủ nốt nhạc ngẫu nhiên lên toàn bộ để ngụy trang
                 nodesData = layoutGrid.map(pos => ({
                     ...pos,
                     note: SCALE[Math.floor(Math.random() * SCALE.length)]
                 }));
 
-                // 2. Các đường dẫn vàng dích dắc dài đúng 15 bước (để khớp với vòng tuần hoàn về ĐÔ)
                 const goldenPaths = [
                     [1, 3, 2, 5, 6, 9, 10, 13, 17, 18, 21, 20, 23, 24, 26],
                     [1, 4, 3, 7, 8, 11, 10, 14, 15, 18, 21, 22, 25, 24, 26],
@@ -184,28 +194,24 @@
                 
                 const selectedPath = goldenPaths[Math.floor(Math.random() * goldenPaths.length)];
 
-                // 3. Ép đường dẫn vàng tuân thủ âm giai
+                // 3. Ép đường dẫn vàng tuân thủ âm giai ngẫu nhiên vừa tạo
                 for (let i = 0; i < selectedPath.length; i++) {
                     const nodeId = selectedPath[i];
                     const node = nodesData.find(n => n.id === nodeId);
-                    node.note = SCALE[i % 7]; 
+                    node.note = currentScale[i % 7]; 
                 }
 
-                // KHÓA CHẾT TÌNH HUỐNG: Đảm bảo điểm A (id:1) và điểm B (id:26) luôn hiển thị ĐÔ 
-                // dù việc random có xảy ra sai sót nào đi chăng nữa.
-                nodesData.find(n => n.id === 1).note = 'ĐÔ';
-                nodesData.find(n => n.id === 26).note = 'ĐÔ';
+                // KHÓA CHẾT TÌNH HUỐNG: Đảm bảo điểm A (id:1) và điểm B (id:26) luôn là Âm Chủ
+                nodesData.find(n => n.id === 1).note = currentScale[0];
+                nodesData.find(n => n.id === 26).note = currentScale[0];
 
                 // 4. Tạo các nét vẽ kết nối
                 edgesData = [];
-                
-                // Trải các nét vẽ ngẫu nhiên đan xen chằng chịt
                 for (let i = 0; i < nodesData.length; i++) {
                     for (let j = i + 1; j < nodesData.length; j++) {
                         let n1 = nodesData[i];
                         let n2 = nodesData[j];
                         if (Math.abs(n1.x - n2.x) <= 15 && Math.abs(n1.y - n2.y) <= 35) {
-                            // Bỏ bớt 20% số đường nối để đồ thị không bị đen kịt, trông giống sách hơn
                             if (Math.random() > 0.2) {
                                 edgesData.push({ a: n1.id, b: n2.id });
                             }
@@ -272,11 +278,12 @@
             function handleNodeClick(clickedNode, btnElement) {
                 if (currentPathNodes.some(n => n.id === clickedNode.id)) return;
 
-                let expectedNote = SCALE[currentPathNodes.length % SCALE.length];
+                // Lấy nốt kỳ vọng từ mảng âm giai hiện tại
+                let expectedNote = currentScale[currentPathNodes.length % 7];
 
                 if (currentPathNodes.length === 0) {
-                    // Bắt buộc node đầu tiên click phải là A (id=1) và chữ ĐÔ
-                    if (clickedNode.id === 1 && clickedNode.note === 'ĐÔ') {
+                    // Node đầu tiên click phải là A (id=1) và là âm chủ của vòng lặp này
+                    if (clickedNode.id === 1 && clickedNode.note === currentScale[0]) {
                         acceptNode(clickedNode, btnElement);
                     } else {
                         rejectNode(btnElement);
@@ -299,7 +306,7 @@
 
                 // Chiến thắng khi chạm đích B (id=26)
                 if (nodeData.id === 26) {
-                    setTimeout(() => alert("Hoàn hảo! Bạn đã tìm ra đường đi trọn vẹn và trở về âm chủ ĐÔ!"), 200);
+                    setTimeout(() => alert(`Hoàn hảo! Bạn đã tìm ra đường đi trọn vẹn và trở về âm chủ ${currentScale[0]}!`), 200);
                 }
             }
 
