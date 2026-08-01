@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài tập 4: Tên nốt và Ký hiệu</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            background-color: #D5E5F2; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        .sidebar { 
+            width: 80px; background-color: #1A2B5F; display: flex; 
+            flex-direction: column; justify-content: flex-end; 
+            align-items: center; padding-bottom: 20px; z-index: 10;
+        }
+
+        .content { 
+            flex-grow: 1; padding: 40px; overflow-y: auto; 
+            display: flex; flex-direction: column; 
+        }
+
+        .back-btn { 
+            text-decoration: none; color: #D00; font-family: sans-serif; 
+            font-weight: bold; margin-bottom: 20px; display: inline-block; 
+        }
+        h2 { color: #1A2B5F; font-size: 32px; margin-bottom: 10px; }
+        p { font-size: 18px; color: #333; line-height: 1.5; margin-bottom: 20px; }
+
+        /* --- Bố cục 2 cột --- */
+        .exercise-layout {
+            display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;
+        }
+
+        /* --- Khu vực Bảng bài tập --- */
+        .board-area {
+            flex: 1;
+            background: white; border-radius: 20px; padding: 30px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            
+            /* Dùng Grid để dàn các cặp câu hỏi thành nhiều cột gọn gàng */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            align-content: start;
+        }
+
+        /* Khối cặp câu hỏi: [ Đề bài ] ➔ [ Ô trống ] */
+        .pair-group {
+            display: flex;
+            border: 2px solid #888;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .pair-group .cell {
+            width: 50%; height: 50px; 
+            display: flex; justify-content: center; align-items: center; 
+            font-weight: bold; font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .pair-group .static { 
+            background: #e0e0e0; color: #1A2B5F; 
+            border-right: 2px solid #888;
+        }
+
+        .pair-group .empty-box {
+            background: #F0F5FA; cursor: pointer; transition: 0.2s; color: #1A2B5F;
+        }
+        .pair-group .empty-box:hover { background: #D5E5F2; }
+
+        .pair-group .empty-box.active {
+            background: #fff5f5; 
+            box-shadow: inset 0 0 0 3px #D00; /* Viền đỏ lọt lòng để không bị vỡ layout */
+        }
+
+        /* Các trạng thái chấm điểm */
+        .pair-group .correct { background-color: #d4edda; color: #155724; font-weight: bold; }
+        .pair-group .incorrect { background-color: #f8d7da; color: #721c24; animation: shake 0.4s; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* --- Bảng Nhập liệu (Bên phải) --- */
+        .controls-area {
+            width: 280px; flex-shrink: 0;
+            background: white; padding: 20px; border-radius: 15px; 
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            position: sticky; top: 0;
+        }
+
+        .palette-section { margin-bottom: 20px; }
+        .palette-title { 
+            font-size: 14px; color: #666; text-transform: uppercase; 
+            margin-bottom: 10px; letter-spacing: 1px;
+        }
+        
+        .palette { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; 
+        }
+
+        .char-btn {
+            width: 45px; height: 45px; border-radius: 8px; background-color: #F0F5FA; 
+            border: 2px solid #1A2B5F; color: #1A2B5F; font-weight: bold; 
+            font-size: 16px; font-family: sans-serif; cursor: pointer; transition: 0.2s;
+        }
+
+        .char-btn:hover { background-color: #1A2B5F; color: white; transform: translateY(-2px); }
+        .char-btn:active { transform: translateY(1px); }
+
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .action-btn {
+            width: 100%; padding: 12px 15px; font-size: 16px; margin: 0;
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+            font-weight: bold;
+        }
+        #checkBtn { background: #D00; color: white; }
+        #checkBtn:hover { background: #a00; }
+        #resetBtn { background: #ddd; color: #333; }
+        #resetBtn:hover { background: #bbb; }
+
+        @media (max-width: 900px) {
+            .exercise-layout { flex-direction: column; }
+            .controls-area { width: 100%; position: static; }
+            .btn-group { flex-direction: row; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div style="color: white; font-weight: bold;">Khóa Sol</div>
+    </aside>
+
+    <main class="content">
+        <div>
+            <a href="exercises.html" class="back-btn">← Quay lại</a>
+            <h2>Bài tập số 4</h2>
+            <p>Khớp ký hiệu chữ cái quốc tế với tên nốt nhạc tương ứng. <br>
+               <b>Hướng dẫn:</b> Đề cho tên nốt thì điền ký hiệu, đề cho ký hiệu thì điền tên nốt!</p>
+        </div>
+
+        <div class="exercise-layout">
+            <div class="board-area" id="gridContainer">
+                <!-- Dữ liệu các câu hỏi sẽ được Javascript tạo tự động ở đây -->
+            </div>
+
+            <div class="controls-area">
+                <h3 style="margin-bottom: 15px; color: #1A2B5F;">Bảng Đáp Án</h3>
+                
+                <!-- Nhóm 1: Các ký hiệu chữ cái -->
+                <div class="palette-section">
+                    <div class="palette-title">Ký hiệu Quốc tế</div>
+                    <div class="palette">
+                        <button class="char-btn">C</button>
+                        <button class="char-btn">D</button>
+                        <button class="char-btn">E</button>
+                        <button class="char-btn">F</button>
+                        <button class="char-btn">G</button>
+                        <button class="char-btn">A</button>
+                        <button class="char-btn">B</button>
+                    </div>
+                </div>
+
+                <!-- Nhóm 2: Tên nốt tiếng Việt -->
+                <div class="palette-section">
+                    <div class="palette-title">Tên Nốt Nhạc</div>
+                    <div class="palette">
+                        <button class="char-btn" style="width: 55px;">ĐÔ</button>
+                        <button class="char-btn" style="width: 55px;">RÊ</button>
+                        <button class="char-btn" style="width: 55px;">MI</button>
+                        <button class="char-btn" style="width: 55px;">FA</button>
+                        <button class="char-btn" style="width: 55px;">SON</button>
+                        <button class="char-btn" style="width: 55px;">LA</button>
+                        <button class="char-btn" style="width: 55px;">SI</button>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="resetBtn" class="action-btn">Trộn đề & Làm lại</button>
+                    <button id="checkBtn" class="action-btn">Kiểm tra kết quả</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Định nghĩa 2 chiều ánh xạ
+            const MAP_NAME_TO_SYM = { 'ĐÔ': 'C', 'RÊ': 'D', 'MI': 'E', 'FA': 'F', 'SON': 'G', 'LA': 'A', 'SI': 'B' };
+            const MAP_SYM_TO_NAME = { 'C': 'ĐÔ', 'D': 'RÊ', 'E': 'MI', 'F': 'FA', 'G': 'SON', 'A': 'LA', 'B': 'SI' };
+            
+            const NAMES = Object.keys(MAP_NAME_TO_SYM);
+            const SYMBOLS = Object.keys(MAP_SYM_TO_NAME);
+            
+            let currentQuestions = [];
+
+            const gridContainer = document.getElementById('gridContainer');
+            const charBtns = document.querySelectorAll('.char-btn');
+            const checkBtn = document.getElementById('checkBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            let activeBox = null;
+
+            // 1. Thuật toán tạo Đề bài: Xuất ra 14 câu (7 câu xuôi, 7 câu ngược) và xáo trộn
+            function generateRandomQuestions() {
+                currentQuestions = [];
+                
+                // Tạo 7 câu hỏi dạng Tên -> Ký hiệu
+                let nameQuestions = NAMES.map(name => ({ 
+                    question: name, 
+                    expected: MAP_NAME_TO_SYM[name] 
+                }));
+                
+                // Tạo 7 câu hỏi dạng Ký hiệu -> Tên
+                let symQuestions = SYMBOLS.map(sym => ({ 
+                    question: sym, 
+                    expected: MAP_SYM_TO_NAME[sym] 
+                }));
+
+                // Gộp lại thành 14 câu
+                let allQuestions = nameQuestions.concat(symQuestions);
+                
+                // Thuật toán Fisher-Yates xáo trộn toàn bộ 14 câu
+                for (let i = allQuestions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+                }
+                
+                currentQuestions = allQuestions;
+            }
+
+            // 2. Dựng bảng HTML
+            function renderGrid() {
+                gridContainer.innerHTML = '';
+                
+                currentQuestions.forEach(q => {
+                    // Tạo khối bọc 1 cặp
+                    const pairDiv = document.createElement('div');
+                    pairDiv.className = 'pair-group';
+
+                    // Ô cố định (Đề bài)
+                    const staticCell = document.createElement('div');
+                    staticCell.className = 'cell static';
+                    staticCell.innerText = q.question;
+
+                    // Ô điền đáp án
+                    const inputCell = document.createElement('div');
+                    inputCell.className = 'cell empty-box';
+                    inputCell.dataset.expected = q.expected; 
+                    
+                    inputCell.addEventListener('click', () => selectBox(inputCell));
+
+                    pairDiv.appendChild(staticCell);
+                    pairDiv.appendChild(inputCell);
+                    gridContainer.appendChild(pairDiv);
+                });
+
+                // Tự động focus ô trống đầu tiên
+                const firstEmpty = document.querySelector('.empty-box');
+                if (firstEmpty) selectBox(firstEmpty);
+            }
+
+            // 3. Logic Đánh dấu ô đang được chọn
+            function selectBox(cellElement) {
+                if (activeBox) activeBox.classList.remove('active');
+                activeBox = cellElement;
+                activeBox.classList.add('active');
+                activeBox.classList.remove('correct', 'incorrect');
+            }
+
+            // 4. Logic Điền chữ từ Palette và tự động nhảy ô
+            charBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!activeBox) return; 
+                    
+                    activeBox.innerText = btn.innerText;
+                    activeBox.classList.remove('correct', 'incorrect');
+
+                    const emptyBoxes = Array.from(document.querySelectorAll('.empty-box'));
+                    const currentIndex = emptyBoxes.indexOf(activeBox);
+                    
+                    if (currentIndex >= 0 && currentIndex < emptyBoxes.length - 1) {
+                        selectBox(emptyBoxes[currentIndex + 1]);
+                    } else {
+                        activeBox.classList.remove('active');
+                        activeBox = null;
+                    }
+                });
+            });
+
+            // Thêm phím tắt bàn phím: gõ A, B, C, D, E, F, G để điền chữ nhanh
+            document.addEventListener('keydown', (e) => {
+                if (!activeBox) return;
+                const key = e.key.toUpperCase();
+                if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(key)) {
+                    activeBox.innerText = key;
+                    activeBox.classList.remove('correct', 'incorrect');
+
+                    const emptyBoxes = Array.from(document.querySelectorAll('.empty-box'));
+                    const currentIndex = emptyBoxes.indexOf(activeBox);
+                    if (currentIndex >= 0 && currentIndex < emptyBoxes.length - 1) {
+                        selectBox(emptyBoxes[currentIndex + 1]);
+                    } else {
+                        activeBox.classList.remove('active');
+                        activeBox = null;
+                    }
+                }
+            });
+
+            // 5. Logic Chấm điểm
+            checkBtn.addEventListener('click', () => {
+                let isAllCorrect = true;
+                const emptyBoxes = document.querySelectorAll('.empty-box');
+                
+                emptyBoxes.forEach(box => {
+                    const expected = box.dataset.expected;
+                    const userAnswer = box.innerText;
+
+                    box.classList.remove('correct', 'incorrect');
+
+                    if (userAnswer === expected) {
+                        box.classList.add('correct');
+                    } else if (userAnswer !== '') { 
+                        box.classList.add('incorrect');
+                        isAllCorrect = false;
+                    } else {
+                        isAllCorrect = false; // Bỏ trống
+                    }
+                });
+
+                if (isAllCorrect) {
+                    setTimeout(() => alert("Phản xạ quá tốt! Bạn đã nắm vững ký hiệu quốc tế của âm giai."), 300);
+                }
+            });
+
+            // 6. Xóa và Random lại
+            resetBtn.addEventListener('click', () => {
+                generateRandomQuestions();
+                renderGrid(); 
+            });
+
+            // Khởi chạy lần đầu
+            generateRandomQuestions();
+            renderGrid();
+        });
+    </script>
+</body>
+</html>
