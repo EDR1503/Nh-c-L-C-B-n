@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài tập 5: Vị trí nốt trên Dòng và Khe</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            background-color: #D5E5F2; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        .sidebar { 
+            width: 80px; background-color: #1A2B5F; display: flex; 
+            flex-direction: column; justify-content: flex-end; 
+            align-items: center; padding-bottom: 20px; z-index: 10;
+        }
+
+        .content { 
+            flex-grow: 1; padding: 40px; overflow-y: auto; 
+            display: flex; flex-direction: column; 
+        }
+
+        .back-btn { 
+            text-decoration: none; color: #D00; font-family: sans-serif; 
+            font-weight: bold; margin-bottom: 20px; display: inline-block; 
+        }
+        h2 { color: #1A2B5F; font-size: 32px; margin-bottom: 10px; }
+        p { font-size: 18px; color: #333; line-height: 1.5; margin-bottom: 20px; }
+
+        /* --- Bố cục 2 cột --- */
+        .exercise-layout {
+            display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;
+        }
+
+        /* --- Khu vực Khuông nhạc (Bên trái) --- */
+        .board-area {
+            flex: 1;
+            background: white; border-radius: 20px; padding: 40px 30px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 400px;
+        }
+
+        .question-text {
+            font-size: 24px; font-weight: bold; color: #1A2B5F;
+            margin-bottom: 50px; text-align: center;
+            padding: 15px 25px; background: #F0F5FA; border-radius: 10px;
+            border: 2px dashed #1A2B5F;
+        }
+
+        .staff-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 30px; 
+        }
+
+        /* --- KIẾN TRÚC KHUÔNG NHẠC --- */
+        .staff-box {
+            position: relative;
+            width: 100%; max-width: 450px;
+            height: 108px;
+            margin: 20px 0;
+        }
+
+        .clef-symbol {
+            position: absolute;
+            left: 10px; 
+            top: -24px; 
+            font-size: 115px;
+            line-height: 1;
+            font-family: 'Times New Roman', serif;
+            color: #1A2B5F;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .staff-lines {
+            position: absolute;
+            top: 5px; 
+            bottom: 5px; 
+            left: 0; 
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .staff-lines .line {
+            height: 2px;
+            background-color: #000;
+            width: 100%;
+        }
+
+        .hitbox-container {
+            position: absolute;
+            top: 0; left: 80px; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .hitbox {
+            height: 12px;
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+        }
+
+        .note-head {
+            width: 32px; height: 24px;
+            background-color: #1A2B5F;
+            border-radius: 50%;
+            transform: rotate(-15deg); 
+            display: none;
+            position: absolute;
+        }
+
+        .write-mode .hitbox { cursor: pointer; }
+        .write-mode .hitbox:hover .note-head { display: block; opacity: 0.3; }
+        
+        .hitbox.has-note .note-head,
+        .hitbox.user-selected .note-head { display: block; opacity: 1; }
+        
+        .hitbox.user-selected .note-head { box-shadow: 0 0 12px rgba(26,43,95,0.5); }
+        
+        .hitbox.correct .note-head { background-color: #28a745; box-shadow: 0 0 12px rgba(40,167,69,0.5); }
+        .hitbox.incorrect .note-head { background-color: #dc3545; animation: shake 0.4s; }
+
+        @keyframes shake {
+            0% { transform: rotate(-15deg) translateX(0); }
+            25% { transform: rotate(-15deg) translateX(-4px); }
+            50% { transform: rotate(-15deg) translateX(4px); }
+            75% { transform: rotate(-15deg) translateX(-4px); }
+            100% { transform: rotate(-15deg) translateX(0); }
+        }
+
+        /* --- ICON KẾT QUẢ ĐÚNG/SAI --- */
+        .result-icon {
+            width: 50px; height: 50px;
+            font-size: 55px;
+            font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; 
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .result-icon.correct {
+            color: #28a745; opacity: 1; transform: scale(1);
+        }
+
+        .result-icon.incorrect {
+            color: #dc3545; opacity: 1; transform: scale(1);
+        }
+
+        /* --- Bảng Nhập liệu (Bên phải) --- */
+        .controls-area {
+            width: 250px; flex-shrink: 0;
+            background: white; padding: 20px; border-radius: 15px; 
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            position: sticky; top: 0;
+        }
+        
+        .palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+
+        .num-btn {
+            width: 55px; height: 55px; border-radius: 10px; background-color: #F0F5FA; 
+            border: 2px solid #1A2B5F; color: #1A2B5F; font-weight: bold; 
+            font-size: 24px; font-family: sans-serif; cursor: pointer; transition: 0.2s;
+        }
+
+        .num-btn:hover:not(:disabled) { background-color: #1A2B5F; color: white; transform: translateY(-3px); }
+        .num-btn.active { background-color: #1A2B5F; color: white; border-color: #D00; }
+        .num-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #999; color: #999; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .action-btn {
+            width: 100%; padding: 15px 15px; font-size: 18px; margin: 0;
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+            font-weight: bold;
+        }
+        #checkBtn { background: #D00; color: white; }
+        #checkBtn:hover:not(:disabled) { background: #a00; }
+        #checkBtn:disabled { background: #ff9999; cursor: not-allowed; }
+
+        @media (max-width: 900px) {
+            .exercise-layout { flex-direction: column; }
+            .controls-area { width: 100%; position: static; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div style="color: white; font-weight: bold;">Khóa Sol</div>
+    </aside>
+
+    <main class="content">
+        <div>
+            <a href="exercises.html" class="back-btn">← Quay lại</a>
+            <h2>Bài tập: Vị trí trên Dòng và Khe</h2>
+            <p>Hệ thống sẽ ra đề ngẫu nhiên. Nếu trả lời sai, bạn phải sửa lại cho đến khi đúng để được qua câu tiếp theo!</p>
+        </div>
+
+        <div class="exercise-layout">
+            <div class="board-area">
+                <div class="question-text" id="questionText">Đang tải đề bài...</div>
+                
+                <div class="staff-wrapper">
+                    <div class="staff-box" id="staffBox">
+                        <div class="clef-symbol">&#119070;</div>
+                        
+                        <div class="staff-lines">
+                            <div class="line"></div>
+                            <div class="line"></div>
+                            <div class="line"></div>
+                            <div class="line"></div>
+                            <div class="line"></div>
+                        </div>
+                        
+                        <div class="hitbox-container">
+                            <div class="hitbox" data-type="line" data-num="5"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="space" data-num="4"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="line" data-num="4"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="space" data-num="3"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="line" data-num="3"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="space" data-num="2"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="line" data-num="2"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="space" data-num="1"><div class="note-head"></div></div>
+                            <div class="hitbox" data-type="line" data-num="1"><div class="note-head"></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dấu Tích Xanh / Chéo Đỏ hiển thị kết quả -->
+                    <div id="resultIcon" class="result-icon"></div>
+                </div>
+            </div>
+
+            <div class="controls-area">
+                <h3 style="margin-bottom: 15px; color: #1A2B5F;">Bàn phím số</h3>
+                <div class="palette">
+                    <button class="num-btn" data-val="1">1</button>
+                    <button class="num-btn" data-val="2">2</button>
+                    <button class="num-btn" data-val="3">3</button>
+                    <button class="num-btn" data-val="4">4</button>
+                    <button class="num-btn" data-val="5">5</button>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="checkBtn" class="action-btn">Kiểm tra kết quả</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const Q_TYPES = ['read_line', 'read_space', 'write_line', 'write_space'];
+            let currentQuestion = {};
+            let currentMode = ''; 
+            
+            let userAnswerNumber = null;
+            let userTargetHitbox = null;
+
+            const questionText = document.getElementById('questionText');
+            const staffBox = document.getElementById('staffBox');
+            const hitboxes = document.querySelectorAll('.hitbox');
+            const numBtns = document.querySelectorAll('.num-btn');
+            const checkBtn = document.getElementById('checkBtn');
+            const resultIcon = document.getElementById('resultIcon');
+
+            function generateQuestion() {
+                // Mở khóa nút kiểm tra
+                checkBtn.disabled = false;
+
+                // Xóa trạng thái UI
+                hitboxes.forEach(hb => hb.classList.remove('has-note', 'user-selected', 'correct', 'incorrect'));
+                numBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.style.backgroundColor = ''; // Xóa màu đúng/sai cũ
+                });
+                
+                // Ẩn Icon kết quả
+                resultIcon.className = 'result-icon';
+                resultIcon.innerHTML = '';
+
+                userAnswerNumber = null;
+                userTargetHitbox = null;
+
+                const typeIndex = Math.floor(Math.random() * Q_TYPES.length);
+                const qType = Q_TYPES[typeIndex];
+                
+                const isLine = qType.includes('line');
+                const targetNum = isLine ? (Math.floor(Math.random() * 5) + 1) : (Math.floor(Math.random() * 4) + 1);
+                
+                currentQuestion = {
+                    mode: qType.startsWith('read') ? 'read' : 'write',
+                    targetType: isLine ? 'line' : 'space',
+                    targetNum: targetNum
+                };
+                currentMode = currentQuestion.mode;
+                setupUIForMode();
+            }
+
+            function setupUIForMode() {
+                const typeVN = currentQuestion.targetType === 'line' ? 'Dòng' : 'Khe';
+                
+                if (currentMode === 'read') {
+                    questionText.innerHTML = `Nốt nhạc trên khuông đang nằm ở <b>${typeVN} số mấy?</b>`;
+                    
+                    const targetBox = document.querySelector(`.hitbox[data-type="${currentQuestion.targetType}"][data-num="${currentQuestion.targetNum}"]`);
+                    targetBox.classList.add('has-note');
+
+                    staffBox.classList.remove('write-mode');
+                    numBtns.forEach(btn => btn.disabled = false);
+                    
+                    if (currentQuestion.targetType === 'space') {
+                        document.querySelector('.num-btn[data-val="5"]').disabled = true;
+                    }
+                } 
+                else {
+                    questionText.innerHTML = `Hãy chấm nốt nhạc vào <b>${typeVN} số ${currentQuestion.targetNum}</b>.`;
+                    
+                    staffBox.classList.add('write-mode');
+                    numBtns.forEach(btn => btn.disabled = true);
+                }
+            }
+
+            numBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (currentMode !== 'read' || btn.disabled) return;
+                    
+                    numBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.backgroundColor = ''; // Reset màu khi chọn lại
+                    });
+                    btn.classList.add('active');
+                    userAnswerNumber = parseInt(btn.dataset.val);
+                });
+            });
+
+            hitboxes.forEach(hitbox => {
+                hitbox.addEventListener('click', () => {
+                    if (currentMode !== 'write') return;
+
+                    hitboxes.forEach(hb => hb.classList.remove('user-selected', 'correct', 'incorrect'));
+                    hitbox.classList.add('user-selected');
+                    userTargetHitbox = hitbox;
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (currentMode !== 'read') return;
+                const num = parseInt(e.key);
+                if (num >= 1 && num <= 5) {
+                    const btn = document.querySelector(`.num-btn[data-val="${num}"]`);
+                    if (btn && !btn.disabled) btn.click();
+                }
+            });
+
+            checkBtn.addEventListener('click', () => {
+                if (checkBtn.disabled) return; // Khóa double click
+                let isCorrect = false;
+
+                if (currentMode === 'read') {
+                    if (!userAnswerNumber) { alert("Vui lòng chọn số ở bảng bên phải!"); return; }
+                    isCorrect = (userAnswerNumber === currentQuestion.targetNum);
+                    
+                    const btn = document.querySelector(`.num-btn[data-val="${userAnswerNumber}"]`);
+                    if (isCorrect) {
+                        btn.style.backgroundColor = '#28a745'; // Xanh lá
+                    } else {
+                        btn.style.backgroundColor = '#dc3545'; // Đỏ
+                        // Xóa màu đỏ sau 1s để người dùng biết đường chọn lại
+                        setTimeout(() => { if(btn.classList.contains('active')) btn.style.backgroundColor = '#1A2B5F'; }, 1000); 
+                    }
+                } 
+                else {
+                    if (!userTargetHitbox) { alert("Vui lòng bấm vào khuông nhạc để đặt nốt!"); return; }
+                    
+                    const userType = userTargetHitbox.dataset.type;
+                    const userNum = parseInt(userTargetHitbox.dataset.num);
+                    
+                    isCorrect = (userType === currentQuestion.targetType && userNum === currentQuestion.targetNum);
+                    
+                    userTargetHitbox.classList.remove('incorrect', 'correct');
+                    if (isCorrect) {
+                        userTargetHitbox.classList.add('correct');
+                    } else {
+                        userTargetHitbox.classList.add('incorrect');
+                    }
+                }
+
+                // Xử lý Icon kết quả và Tự động chuyển câu
+                if (isCorrect) {
+                    resultIcon.innerHTML = '✔';
+                    resultIcon.className = 'result-icon correct';
+                    
+                    // Khóa nút để tránh lỗi người dùng bấm liên tục
+                    checkBtn.disabled = true;
+                    
+                    // Tự động chuyển qua câu mới sau 1.2 giây
+                    setTimeout(() => {
+                        generateQuestion();
+                    }, 1200);
+
+                } else {
+                    resultIcon.innerHTML = '✖';
+                    resultIcon.className = 'result-icon incorrect';
+                    // Giữ nguyên câu hiện tại để người dùng tự sửa lỗi
+                }
+            });
+
+            // Khởi chạy game
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>
